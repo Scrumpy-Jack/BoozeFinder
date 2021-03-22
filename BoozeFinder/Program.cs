@@ -28,13 +28,12 @@ namespace BoozeFinder
 				stores.ForEach(store => {
 					if(store.quantity > 0)
 					{
-						Console.WriteLine($"{booze.Key} has been found at store {store.address}");
+						Console.WriteLine($"{booze.Key} has been found at {store.address}");
 					}
 				
 				});
 
 			}
-
 
 		}
 
@@ -53,7 +52,11 @@ namespace BoozeFinder
 
 				var stores = new List<Store>();
 				stores.Add(product.storeInfo);
-				stores.AddRange(product.nearbyStores);
+				if(product.nearbyStores != null)
+				{
+					stores.AddRange(product.nearbyStores);
+
+				}
 
 				return stores;
 
@@ -83,11 +86,17 @@ namespace BoozeFinder
 			foreach (var product in limitedProductsList)
 			{
 
-				var test = new Regex("fdsfads");
-				var match = test.Matches(product.InnerText);
+				var regex = new Regex(@"(?<productName>.*)\W*\|\W*(?<productId>[\d]+)");
+				var productMatch = regex.Matches(product.InnerText)[0];
 
-				var split = product.InnerText.Split("|");
-				limitedProducts.Add(split[0].Trim(), split[1].Trim().re);
+				Console.WriteLine(productMatch.Groups["productName"].Value, productMatch.Groups["producId"].Value);
+
+
+
+				//var split = product.InnerText.Split("|");
+				//limitedProducts.Add(split[0].Trim(), split[1].Trim().re);
+
+				limitedProducts.Add(productMatch.Groups["productName"].Value, productMatch.Groups["productId"].Value);
 			}
 
 			return limitedProducts;
