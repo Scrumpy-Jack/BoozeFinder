@@ -43,9 +43,9 @@ namespace BoozeFinder
 			var sortedStores = storesWithBooze.GroupBy(x => x.Value)
 			.ToDictionary(x => x.Key, x => x.Select(i => i.Key).ToList());
 
-			var one = JsonConvert.SerializeObject(sortedStores);
+			var formatedStores = JsonConvert.SerializeObject(sortedStores);
 
-			Console.WriteLine(one);
+			Console.WriteLine(formatedStores);
 		}
 
 		private static List<Store> WebRequest(string productId)
