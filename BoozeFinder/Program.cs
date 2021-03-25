@@ -8,6 +8,7 @@ using Newtonsoft.Json.Linq;
 using RestSharp;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.IO;
 
 namespace BoozeFinder
 {
@@ -20,32 +21,41 @@ namespace BoozeFinder
 			var storesWithBooze = new Dictionary<string, string>();
 			var goodBooze = GetBooze.scrapeLimitedAvailability();
 
-
-			foreach (var booze in goodBooze)
+			try
 			{
-				var stores = GetBooze.WebRequest(booze.Value);
-
-				stores.ForEach(store =>
+				foreach (var booze in goodBooze)
 				{
-					if (store.quantity > 0)
+					var stores = GetBooze.WebRequest(booze.Value);
+
+					stores.ForEach(store =>
 					{
-						var storeFoundText = $"{store.quantity} bottle(s) of {booze.Key} are available at {store.address}";
-						var storeId = store.storeId;
-						var storeInfo = $"{store.address}, Store ID:[{store.storeId}]";
+						if (store.quantity > 0)
+						{
+							var storeFoundText = $"{store.storeId} | {store.quantity} bottle(s) of {booze.Key}";
+							var storeInfo = $"{store.address}, Store ID:[{store.storeId}]. This location is {store.distance} miles from your home store";
 
-						storesWithBooze.Add(storeFoundText, storeInfo);
-					}
+							storesWithBooze.Add(storeFoundText, storeInfo);
+						}
 
-				});
+					});
 
+				}
 			}
+			catch (Exception)
+			{
+
+				throw;
+			}
+
 
 			var sortedStores = storesWithBooze.GroupBy(x => x.Value)
 			.ToDictionary(x => x.Key, x => x.Select(i => i.Key).ToList());
 
-			var formatedStores = JsonConvert.SerializeObject(sortedStores);
+			var formatedStores = JsonConvert.SerializeObject(sortedStores, Newtonsoft.Json.Formatting.Indented);
 
-			Console.WriteLine(formatedStores);
+			File.WriteAllText($"{Environment.GetFolderPath(Environment.SpecialFolder.Desktop)}/Booze.json", formatedStores);
+
+			Console.WriteLine("BOOZE FOUND!");
 		}
 
 		private static List<Store> WebRequest(string productId)
@@ -56,7 +66,7 @@ namespace BoozeFinder
 
 				// TODO: Take peramater for storeNumber and mileRadius 
 
-				var client = new RestClient("https://www.abc.virginia.gov/webapi/inventory/storeNearby?storeNumber=82&productCode=" + productId + "&mileRadius=30&storeCount=5&buffer=1");
+				var client = new RestClient("https://www.abc.virginia.gov/webapi/inventory/storeNearby?storeNumber=82&productCode=" + productId + "&mileRadius=30&storeCount=5&buffer=0");
 				var request = new RestRequest("", DataFormat.Json);
 
 				var response = client.Get(request);
@@ -83,6 +93,7 @@ namespace BoozeFinder
 		}
 
 		private static Dictionary<String, String> scrapeLimitedAvailability()
+
 		{
 			var limitedProducts = new Dictionary<string, string>();
 
@@ -99,7 +110,6 @@ namespace BoozeFinder
 
 			foreach (var product in limitedProductsList)
 			{
-
 				var regex = new Regex(@"(?<productName>.*)\W*\|\W*(?<productId>[\d]+)");
 				var productMatch = regex.Matches(product.InnerText)[0];
 
@@ -154,6 +164,5 @@ namespace BoozeFinder
 			public bool wholesale { get; set; }
 
 		}
-
 	}
 }
